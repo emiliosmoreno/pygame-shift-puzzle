@@ -1,8 +1,10 @@
 import sys
 import random
 import pygame
+from pygame import gfxdraw
 
-IMAGE_FILE = "dduck800_600.jpg" 
+ #IMAGE_FILE = "resources/dduck800_600.jpg" 
+IMAGE_FILE = "resources/acantilado.jpg" 
 IMAGE_SIZE = (800, 600)
 TILE_WIDTH = 200
 TILE_HEIGHT = 200
@@ -12,35 +14,52 @@ ROWS = 3
 # bottom right corner contains no tile
 EMPTY_TILE = (COLUMNS-1, ROWS-1)   
 
-BLACK = (0, 0, 0)
+BLACK = (0, 0, 0)  
 
-# horizontal and vertical borders for tiles
-hor_border = pygame.Surface((TILE_WIDTH, 1))
-hor_border.fill(BLACK)
-ver_border = pygame.Surface((1, TILE_HEIGHT))
-ver_border.fill(BLACK)
 
-# load the image and divide up in tiles
-# putting borders on each tile also adds them to the full image
 image = pygame.image.load(IMAGE_FILE)
 tiles = {}
-for c in range(COLUMNS) :
-    for r in range(ROWS) :
-        tile = image.subsurface (
-            c*TILE_WIDTH, r*TILE_HEIGHT, 
-            TILE_WIDTH, TILE_HEIGHT)
-        tiles [(c, r)] = tile
-        if (c, r) != EMPTY_TILE:
-            tile.blit(hor_border, (0, 0))
-            tile.blit(hor_border, (0, TILE_HEIGHT-1))
-            tile.blit(ver_border, (0, 0))
-            tile.blit(ver_border, (TILE_WIDTH-1, 0))
-            # make the corners a bit rounded
-            tile.set_at((1, 1), BLACK)
-            tile.set_at((1, TILE_HEIGHT-2), BLACK)
-            tile.set_at((TILE_WIDTH-2, 1), BLACK)
-            tile.set_at((TILE_WIDTH-2, TILE_HEIGHT-2), BLACK)
-tiles[EMPTY_TILE].fill(BLACK)
+solution={}  
+
+
+#def isSolution():
+   # return tiles == solution
+   #for i in range(tiles):
+   #   for j in range(tiles):
+   #      if (tiles[i][j] != solution[i][j]):
+   #         return 0
+   #return 1
+ 
+
+def loadGame() :
+    # horizontal and vertical borders for tiles
+    hor_border = pygame.Surface((TILE_WIDTH, 1))
+    hor_border.fill(BLACK)
+    ver_border = pygame.Surface((1, TILE_HEIGHT))
+    ver_border.fill(BLACK)
+    
+    # load the image and divide up in tiles
+    # putting borders on each tile also adds them to the full image
+    
+    for c in range(COLUMNS) :
+        for r in range(ROWS) :
+            tile = image.subsurface (
+                c*TILE_WIDTH, r*TILE_HEIGHT, 
+                TILE_WIDTH, TILE_HEIGHT)
+            tiles [(c, r)] = tile
+            if (c, r) != EMPTY_TILE:
+                tile.blit(hor_border, (0, 0))
+                tile.blit(hor_border, (0, TILE_HEIGHT-1))
+                tile.blit(ver_border, (0, 0))
+                tile.blit(ver_border, (TILE_WIDTH-1, 0))
+                # make the corners a bit rounded
+                tile.set_at((1, 1), BLACK)
+                tile.set_at((1, TILE_HEIGHT-2), BLACK)
+                tile.set_at((TILE_WIDTH-2, 1), BLACK)
+                tile.set_at((TILE_WIDTH-2, TILE_HEIGHT-2), BLACK)
+    tiles[EMPTY_TILE].fill(BLACK)
+    solution=tiles
+loadGame()
 
 # keep track of which tile is in which position
 state = {(col, row): (col, row) 
@@ -55,7 +74,7 @@ display = pygame.display.set_mode(IMAGE_SIZE)
 pygame.display.set_caption("shift-puzzle")
 display.blit (image, (0, 0))
 pygame.display.flip()
-
+    
 # swap a tile (c, r) with the neighbouring (emptyc, emptyr) tile
 def shift (c, r) :
     global emptyc, emptyr 
@@ -75,9 +94,9 @@ def shuffle() :
     global emptyc, emptyr
     # keep track of last shuffling direction to avoid "undo" shuffle moves
     last_r = 0 
-    for i in range(75):
+    for i in range(5):
         # slow down shuffling for visual effect
-        pygame.time.delay(50)
+        pygame.time.delay(70)
         while True:
             # pick a random direction and make a shuffling move
             # if that is possible in that direction
@@ -98,7 +117,7 @@ def shuffle() :
                 continue
             last_r=r
             break # a shuffling move was made
-
+    
 # process mouse clicks 
 at_start = True
 showing_solution = False
@@ -117,9 +136,24 @@ while True:
             mouse_pos = pygame.mouse.get_pos()
             c = mouse_pos[0] / TILE_WIDTH
             r = mouse_pos[1] / TILE_HEIGHT
-            if (    (abs(c-emptyc) == 1 and r == emptyr) or  
-                    (abs(r-emptyr) == 1 and c == emptyc)):
-                shift (c, r)
+            #print ("(c,r)=(",c,",",r,")")
+            cond1= (abs(c-emptyc) == 1)
+            cond2= (r == emptyr)
+            cond3= (abs(r-emptyr) == 1)
+            cond4= (c == emptyc)
+
+            columna = round(c % COLUMNS - 0.5)
+            fila = round(r % ROWS - 0.5)
+            
+            is_horizontal_move=(abs(columna - emptyc)<=1 and abs(fila-emptyr)==0)
+            is_vertical_move=(abs(columna - emptyc)==0 and abs(fila-emptyr)<=1)
+            if (is_horizontal_move or is_vertical_move):
+                shift (columna, fila)
+                #if (isSolution()):
+                #    print ("HAS RESUELTO EL PUZZZZLEEEEE!!!!!")
+            #if (    ( cond1 and cond2) or  
+            #        ( cond3 and cond4)):
+            #    shift (c, r)
         elif event.dict['button'] == 3:
             # mouse right button: show solution image
             saved_image = display.copy()
@@ -131,4 +165,3 @@ while True:
         display.blit (saved_image, (0, 0))
         pygame.display.flip()
         showing_solution = False
-
